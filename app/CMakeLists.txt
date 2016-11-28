@@ -14,4 +14,4 @@ find_library( log-lib
 target_link_libraries(native-lib
                       log
                       android
-                      ffmpeg3 )
+                      ffmpeg3)

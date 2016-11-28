@@ -4,6 +4,8 @@
 #include <assert.h>
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
+
+
 extern "C"{
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
@@ -11,6 +13,7 @@ extern "C"{
 #include "libavutil/imgutils.h"
 };
 #define LOGD(format, ...)  __android_log_print(ANDROID_LOG_INFO,  "native-lib", format, ##__VA_ARGS__)
+
 static AVPacket *vPacket;
 static AVFrame *vFrame, *pFrameRGBA;
 static AVCodecContext *vCodecCtx;
@@ -19,11 +22,11 @@ static AVFormatContext *pFormatCtx;
 ANativeWindow* nativeWindow;
 ANativeWindow_Buffer windowBuffer;
 uint8_t *v_out_buffer;
+jmethodID gOnResolutionChange = NULL;
 
 extern "C"
 int
-Java_com_jorkyin_livevideo_MainActivity_play(JNIEnv* env, jclass clazz, jstring url, jobject surface) {
-    LOGD("********************************play*********************************\n");
+Java_com_jorkyin_livevideo_Player_play(JNIEnv* env,  jobject obj, jstring url, jobject surface) {
     int i;
     AVCodec *vCodec;
     char input_str[500]={0};
@@ -56,7 +59,9 @@ Java_com_jorkyin_livevideo_MainActivity_play(JNIEnv* env, jclass clazz, jstring 
         return -1;
     }
     //获取相应视频流的解码器
-    vCodecCtx=pFormatCtx->streams[videoindex]->codec;
+    //vCodecCtx=pFormatCtx->streams[videoindex]->codec;
+    vCodecCtx = avcodec_alloc_context3(NULL);
+    avcodec_parameters_to_context(vCodecCtx,pFormatCtx->streams[videoindex]->codecpar);
     vCodec = avcodec_find_decoder(vCodecCtx->codec_id);
     assert(vCodec != NULL);
     //打开解码器
@@ -72,7 +77,18 @@ Java_com_jorkyin_livevideo_MainActivity_play(JNIEnv* env, jclass clazz, jstring 
     }
     int width = vCodecCtx->width;
     int height = vCodecCtx->height;
-    LOGD("********************************sdfsdfsfsf*********************************\n");
+
+
+    if (NULL == gOnResolutionChange){
+        jclass clazz = env->GetObjectClass(obj);
+        gOnResolutionChange = env->GetMethodID(clazz,"onResolutionChange","(II)V");
+        if (NULL == gOnResolutionChange){
+            LOGD("Couldn't find onResolutionChange method.\n");
+            return -1;
+        }
+    }
+
+    env->CallVoidMethod(obj, gOnResolutionChange, width, height);
     //分配一个帧指针，指向解码后的原始帧
     vFrame = av_frame_alloc();
     vPacket = (AVPacket *)av_malloc(sizeof(AVPacket));
@@ -114,10 +130,10 @@ Java_com_jorkyin_livevideo_MainActivity_play(JNIEnv* env, jclass clazz, jstring 
                            pFrameRGBA->linesize[0]);
                 }
                 ANativeWindow_unlockAndPost(nativeWindow);
-
             }
         }
         av_packet_unref(vPacket);
+
     }
     //释放内存
     sws_freeContext(img_convert_ctx);
