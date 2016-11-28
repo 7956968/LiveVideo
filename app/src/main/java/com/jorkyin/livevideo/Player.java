@@ -63,12 +63,15 @@ public class Player extends AppCompatActivity implements VideoEventListener {
     }
 
     class Play implements Runnable {
-
         @Override
         public void run() {
             //获取文件路径，这里将文件放置在手机根目录下
             String folderurl = Environment.getExternalStorageDirectory().getPath();
-            String inputurl = folderurl+"/a.mp4";
+            //   String inputurl = "http://1251659802.vod2.myqcloud.com/vod1251659802/9031868222807497694/f0.mp4";
+         String inputurl = "http://14.18.17.142:9009/live/chid=71";
+            //          String inputurl = "rtmp://123.108.164.71/etv2/phd1058";
+            //String inputurl = "rtsp://c.itvitv.com/axn";
+          //String inputurl = folderurl+"/a.mp4";
             play(inputurl, surfaceViewHolder.getSurface());
         }
     }

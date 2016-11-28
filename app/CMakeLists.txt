@@ -7,11 +7,15 @@ set_target_properties(ffmpeg3 PROPERTIES IMPORTED_LOCATION
                           ${lib_src_DIR}/libffmpeg.so)
 
 add_library( native-lib SHARED
-             src/main/cpp/native-lib.cpp )
+             ${CMAKE_SOURCE_DIR}/src/main/cpp/native-lib.cpp
+             ${CMAKE_SOURCE_DIR}/src/main/cpp/player.cpp
+             ${CMAKE_SOURCE_DIR}/src/main/cpp/opensles.cpp
+             ${CMAKE_SOURCE_DIR}/src/main/cpp/easyPlayer.cpp )
 
 find_library( log-lib
               log )
 target_link_libraries(native-lib
                       log
                       android
+                      OpenSLES
                       ffmpeg3)
