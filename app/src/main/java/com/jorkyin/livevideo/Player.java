@@ -9,6 +9,8 @@ import android.view.Display;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
+import android.widget.Button;
 import android.widget.RelativeLayout;
 
 import com.jorkyin.livevideo.events.VideoEventListener;
@@ -44,6 +46,15 @@ public class Player extends AppCompatActivity implements VideoEventListener {
             @Override
             public void surfaceDestroyed(SurfaceHolder holder) {    }
         });
+
+        Button pause = (Button) findViewById(R.id.pause);
+        pause.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                togglePaused();
+
+            }
+        });
     }
 
     @Override
@@ -61,7 +72,11 @@ public class Player extends AppCompatActivity implements VideoEventListener {
             }
         });
     }
-
+    @Override
+    protected void onPause() {
+        super.onPause();
+        togglePaused();
+    }
     class Play implements Runnable {
 
         @Override
@@ -78,5 +93,6 @@ public class Player extends AppCompatActivity implements VideoEventListener {
      * which is packaged with this application.
      */
     public native void play(String url, Surface surface);
+    public native void togglePaused();
 
 }
