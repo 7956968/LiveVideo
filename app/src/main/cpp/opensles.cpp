@@ -2,7 +2,6 @@
 // Created by Administrator on 2016/10/26.
 //
 
-#include <SLES/OpenSLES_Android.h>
 #include "include/opensles.h"
 
 
@@ -190,9 +189,7 @@ void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
 {
     assert(bq == bqPlayerBufferQueue);
     assert(NULL == context);
-    /*if (mPlayer->get_paused()) {
-        mPlayer->wait_paused();
-    }*/
+
     // for streaming playback, replace this test by logic to find and fill the next buffer
     mPlayer->get_aud_buffer(nextSize, outputBuffer);
     if ( NULL != outputBuffer && 0 != nextSize) {

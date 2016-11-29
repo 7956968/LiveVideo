@@ -133,21 +133,13 @@ public:
     bool get_img_frame(AVFrame *frame);
     bool get_aud_buffer(int &nextSize, uint8_t *outputBuffer);
     void wait_state(PlayerState need_state);
-    void wait_paused();
     void release();
-    void togglePaused() {
-        std::unique_lock<std::mutex> lock(mutex);
-        paused = !paused;
-        pause_condition.notify_all();
-    }
-    bool get_paused() {
-        return paused;
-    }
+
     AVFormatContext *ic;
     char *filename;
     int abort_request;
     int force_refresh;
-
+    int paused;
     int last_paused;
     int queue_attachments_req;
     int seek_req;
@@ -167,7 +159,7 @@ private:
     int last_video_stream, last_audio_stream;
     int video_stream = -1;
     AVStream *video_st;
-    bool paused = false;
+
     double max_frame_duration;      // maximum duration of a frame - above this, we consider the jump a timestamp discontinuity
     struct SwsContext *img_convert_ctx;
 
@@ -200,7 +192,6 @@ private:
     int64_t duration = AV_NOPTS_VALUE;
     std::mutex mutex;
     std::condition_variable state_condition;
-    std::condition_variable pause_condition;
 
 };
 

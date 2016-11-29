@@ -10,6 +10,12 @@
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 
+extern "C"{
+#include "libavcodec/avcodec.h"
+#include "libavformat/avformat.h"
+#include "libswscale/swscale.h"
+#include "libavutil/imgutils.h"
+};
 #define LOGD(format, ...)  __android_log_print(ANDROID_LOG_INFO,  "native-lib", format, ##__VA_ARGS__)
 
 static AVPacket *vPacket;
@@ -21,8 +27,9 @@ ANativeWindow* nativeWindow;
 ANativeWindow_Buffer windowBuffer;
 uint8_t *v_out_buffer;
 jmethodID gOnResolutionChange = NULL;
-EasyPlayer easyPlayer;
 Player player;
+EasyPlayer easyPlayer;
+
 void showPic() {
     easyPlayer.wait_state(PlayerState::READY);
     if (!easyPlayer.has_video()) return;
@@ -38,9 +45,6 @@ void showPic() {
     while (easyPlayer.get_img_frame(frameRGBA)) {
         if (ANativeWindow_lock(nativeWindow, &windowBuffer, NULL) < 0) {
             LOGD("cannot lock window");
-            if (easyPlayer.get_paused()) {
-                easyPlayer.wait_paused();
-            }
         } else {
             uint8_t *dst = (uint8_t *) windowBuffer.bits;
             for (int h = 0; h < easyPlayer.viddec.get_height(); h++)
@@ -94,56 +98,47 @@ void log(void* ptr, int level, const char* fmt,va_list vl) {
     }
 }
 
+
 extern "C"
 void
-Java_com_jorkyin_livevideo_Player_play
-        (JNIEnv *env, jobject obj, jstring url, jobject surface){
+Java_com_jorkyin_livevideo_Player_play(JNIEnv* env,  jobject obj, jstring url, jobject surface) {
     char inputStr[500] = {0};
     sprintf(inputStr, "%s", env->GetStringUTFChars(url, NULL));
     av_log_set_callback(log);
-
     easyPlayer.init(inputStr);
-    //init(&easyPlayer);
-    nativeWindow = ANativeWindow_fromSurface(env,surface);
-    if (nativeWindow == 0){
+
+    //player.init(inputStr);
+    init(&easyPlayer);
+    nativeWindow = ANativeWindow_fromSurface(env, surface);
+    if (0 == nativeWindow){
         LOGD("Couldn't get native window from surface.\n");
         return;
     }
 
-    if(gOnResolutionChange == NULL){
-        jclass  clazz = env->GetObjectClass(obj);
+    if (NULL == gOnResolutionChange){
+        jclass clazz = env->GetObjectClass(obj);
         gOnResolutionChange = env->GetMethodID(clazz,"onResolutionChange","(II)V");
-        if (gOnResolutionChange == NULL){
+        if (NULL == gOnResolutionChange){
             LOGD("Couldn't find onResolutionChange method.\n");
             return;
         }
     }
-
     std::thread videoThread(showPic);
     std::thread audioThread(playAudio);
-
     easyPlayer.wait_state(PlayerState::READY);
-    if (easyPlayer.has_video()){
-        env->CallVoidMethod(obj,gOnResolutionChange,easyPlayer.viddec.get_width(),easyPlayer.viddec.get_height());
-
+    if (easyPlayer.has_video()) {
+        env->CallVoidMethod(obj, gOnResolutionChange, easyPlayer.viddec.get_width(), easyPlayer.viddec.get_height());
     }
+//    std::thread decodeThread(decode);
 
     audioThread.join();
     videoThread.join();
+//    decodeThread.join();
 }
-
-extern "C"
-void
-Java_com_jorkyin_livevideo_Player_togglePaused
-        (JNIEnv *env, jobject obj) {
-    easyPlayer.togglePaused();
-}
-
 
 extern "C"
 int
-Java_com_jorkyin_livevideo_Player_play2
-        (JNIEnv* env,  jobject obj, jstring url, jobject surface) {
+Java_com_jorkyin_livevideo_Player_play2(JNIEnv* env,  jobject obj, jstring url, jobject surface) {
     int i;
     AVCodec *vCodec;
     char input_str[500]={0};
