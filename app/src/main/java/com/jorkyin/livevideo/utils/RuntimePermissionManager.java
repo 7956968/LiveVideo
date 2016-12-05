@@ -61,7 +61,8 @@ public class RuntimePermissionManager {
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.MODIFY_AUDIO_SETTINGS,
             Manifest.permission.INTERNET,
-            Manifest.permission.READ_EXTERNAL_STORAGE
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WAKE_LOCK
     };
 
     public RuntimePermissionManager(Activity activity) {

@@ -10,6 +10,7 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.RelativeLayout;
 
 import com.jorkyin.livevideo.events.VideoEventListener;
@@ -32,6 +33,8 @@ public class Player extends AppCompatActivity implements VideoEventListener, Vie
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         surfaceView = (SurfaceView) findViewById(R.id.surface);
         surfaceViewHolder = surfaceView.getHolder();
@@ -78,7 +81,12 @@ public class Player extends AppCompatActivity implements VideoEventListener, Vie
      */
     @Override
     public void onClick(View v) {
-       // pause();
+        switch (v.getId()){
+            case R.id.pause:
+                pause();
+                break;
+        }
+
     }
 
     class Play implements Runnable {
@@ -100,5 +108,5 @@ public class Player extends AppCompatActivity implements VideoEventListener, Vie
      * which is packaged with this application.
      */
     public native void play(String url, Surface surface);
-    //public native void pause();
+    public native void pause();
 }

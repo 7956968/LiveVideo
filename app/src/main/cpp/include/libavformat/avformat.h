@@ -2335,7 +2335,7 @@ int avformat_flush(AVFormatContext *s);
  * Start playing a network-based stream (e.g. RTSP stream) at the
  * current position.
  */
-int av_read_play(AVFormatContext *s);
+int av_read_play();
 
 /**
  * Pause a network-based stream (e.g. RTSP stream).

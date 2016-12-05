@@ -11,11 +11,6 @@
 #include <pthread.h>
 #include <assert.h>
 #include "easyPlayer.h"
-
-
-
-
-
 void createAudioEngine();
 void createBufferQueueAudioPlayer(int sampleRate, int channel);
 void audioStart();

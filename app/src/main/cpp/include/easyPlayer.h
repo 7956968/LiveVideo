@@ -23,107 +23,8 @@ extern "C"{
 #include <condition_variable>
 #include <memory>
 #include <unistd.h>
-
-class PacketQueue {
-public:
-    int put_packet(AVPacket *pkt);
-    int get_packet(AVPacket *pkt);
-    int put_nullpacket();
-    void set_abort(int abort);
-    int get_abort();
-    int get_serial();
-    size_t get_queue_size();
-private:
-    std::queue<AVPacket> queue;
-    int64_t duration;
-    int abort_request = 1;
-    int serial;
-    std::mutex mutex;
-    std::condition_variable cond;
-    std::condition_variable full;
-    const size_t MAX_SIZE = 8;
-
-};
-
-
-struct Frame {
-    Frame(AVFrame *f) : frame(f){
-
-    }
-    AVFrame *frame;
-    int serial;
-    double pts;           /* presentation timestamp for the frame */
-    double duration;      /* estimated duration of the frame */
-    int64_t pos;          /* byte position of the frame in the input file */
-    int allocated;
-    int width;
-    int height;
-    int format;
-    AVRational sar;
-    int uploaded;
-};
-
-
-class FrameQueue {
-public:
-    void put_frame(AVFrame *frame);
-    std::shared_ptr<Frame> get_frame();
-    size_t get_size();
-private:
-    std::queue<std::shared_ptr<Frame>> queue;
-    std::mutex mutex;
-    std::condition_variable empty;
-    std::condition_variable full;
-    const size_t MAX_SIZE = 16;
-};
-
-class Decoder {
-public:
-    virtual int decoder_decode_frame() = 0;
-    virtual void decode() = 0;
-    void init(AVCodecContext *ctx);
-    void start_decode_thread();
-    PacketQueue pkt_queue;
-    FrameQueue frame_queue;
-    AVCodecContext *avctx;
-protected:
-    AVPacket pkt;
-    AVPacket pkt_temp;
-    int pkt_serial;
-    int finished;
-    int packet_pending;
-    std::condition_variable empty_queue_cond;
-    int64_t start_pts;
-    AVRational start_pts_tb;
-    int64_t next_pts;
-    AVRational next_pts_tb;
-};
-
-
-class VideoDecoder : public Decoder {
-public:
-    virtual int decoder_decode_frame() override ;
-    virtual void decode() override ;
-    int get_width();
-    int get_height();
-};
-
-class AudioDecoder : public Decoder {
-public:
-    virtual int decoder_decode_frame() override ;
-    virtual void decode() override ;
-    int get_channels();
-    int get_sample_rate();
-};
-
-
-enum class PlayerState {
-    UNKNOWN,
-    INIT,
-    BUFFERING,
-    READY,
-};
-
+#include "PlayerState.h"
+#include "Decoder.h"
 
 class EasyPlayer {
 public:
@@ -201,8 +102,6 @@ private:
     std::mutex mutex;
     std::condition_variable state_condition;
     std::condition_variable pause_condition;
-
 };
-
 
 #endif //EASYPLAYER_EASYPLAYER_H

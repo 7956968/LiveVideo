@@ -92,6 +92,12 @@ void log(void* ptr, int level, const char* fmt,va_list vl) {
 
 extern "C"
 void
+Java_com_jorkyin_livevideo_Player_pause(JNIEnv *env, jobject instance) {
+    easyPlayer.togglePaused();
+}
+
+extern "C"
+void
 Java_com_jorkyin_livevideo_Player_play(JNIEnv* env,  jobject obj, jstring url, jobject surface) {
     char inputStr[500] = {0};
     //读取输入的视频频文件地址

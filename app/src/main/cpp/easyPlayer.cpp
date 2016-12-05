@@ -2,215 +2,8 @@
 // Created by JasonXiao on 2016/11/10.
 //
 
+
 #include "easyPlayer.h"
-
-
-int PacketQueue::put_packet(AVPacket *pkt) {
-    if (abort_request) {
-        av_log(NULL, AV_LOG_INFO, "put_packet abort.\n");
-        return -1;
-    }
-    int ret;
-    std::unique_lock<std::mutex> lock(mutex);
-    while (true) {
-        if (queue.size() < MAX_SIZE) {
-            AVPacket *packet = (AVPacket *)av_malloc(sizeof(AVPacket));
-            if (packet == NULL) {
-                av_log(NULL, AV_LOG_FATAL, "Could not create new AVPacket.\n");
-                return -1;
-            }
-            ret = av_copy_packet(packet, pkt);
-            if (ret != 0) {
-                av_log(NULL, AV_LOG_FATAL, "Could not copy AVPacket.\n");
-                return -1;
-            }
-            queue.push(*packet);
-            duration += packet->duration;
-            cond.notify_one();
-            break;
-        }else {
-            full.wait(lock);
-        }
-    }
-    return 0;
-}
-
-
-int PacketQueue::get_packet(AVPacket *pkt) {
-    std::unique_lock<std::mutex> lock(mutex);
-    for (;;) {
-        if (abort_request) {
-            return -1;
-        }
-        if (queue.size() > 0) {
-            AVPacket tmp = queue.front();
-            av_copy_packet(pkt, &tmp);
-            duration -= tmp.duration;
-            queue.pop();
-            av_packet_unref(&tmp);
-            full.notify_one();
-            return 0;
-        }else {
-            cond.wait(lock);
-        }
-    }
-}
-
-
-int PacketQueue::put_nullpacket() {
-    AVPacket *pkt = new AVPacket();
-    av_init_packet(pkt);
-    pkt->data = NULL;
-    pkt->size = 0;
-    put_packet(pkt);
-    return 0;
-}
-
-
-void PacketQueue::set_abort(int abort) {
-    abort_request = abort;
-}
-
-int PacketQueue::get_abort() {
-    return abort_request;
-}
-
-int PacketQueue::get_serial(){
-    return serial;
-}
-
-size_t PacketQueue::get_queue_size() {
-    return queue.size();
-}
-
-
-std::shared_ptr<Frame> FrameQueue::get_frame() {
-    std::unique_lock<std::mutex> lock(mutex);
-    for (;;) {
-        if (queue.size() > 0) {
-            auto tmp = queue.front();
-            queue.pop();
-            full.notify_one();
-            return tmp;
-        }else {
-            empty.wait(lock);
-        }
-    }
-}
-
-
-void FrameQueue::put_frame(AVFrame *frame) {
-    std::unique_lock<std::mutex> lock(mutex);
-    while (true) {
-        if (queue.size() < MAX_SIZE) {
-            auto m_frame = std::make_shared<Frame>(frame);
-            queue.push(m_frame);
-            empty.notify_one();
-            return;
-        }else{
-            full.wait(lock);
-        }
-    }
-
-}
-
-size_t FrameQueue::get_size() {
-    return queue.size();
-}
-
-
-void Decoder::init(AVCodecContext *ctx) {
-    avctx = ctx;
-
-}
-
-
-void Decoder::start_decode_thread() {
-    pkt_queue.set_abort(0);
-    std::thread t(&Decoder::decode, this);
-    t.detach();
-}
-
-int VideoDecoder::get_height() {
-    if (!avctx) return 0;
-    return avctx->height;
-}
-
-int VideoDecoder::get_width(){
-    if (!avctx) return 0;
-    return avctx->width;
-}
-
-
-
-void VideoDecoder::decode() {
-
-    for (;;) {
-        if (pkt_queue.get_abort()) break;
-        int got_picture;
-        if ((got_picture = decoder_decode_frame()) < 0)
-            return;
-
-    }
-}
-
-
-int AudioDecoder::decoder_decode_frame() {
-    int ret;
-
-    do {
-
-        if (pkt_queue.get_abort())
-            return -1;
-        if (!packet_pending || pkt_queue.get_serial() != pkt_serial) {
-
-            if (pkt_queue.get_packet(&pkt) < 0) return -1;
-        }
-        if (pkt.data == NULL) {
-            av_log(NULL, AV_LOG_FATAL, "reach eof.\n");
-            return -1;
-        }
-        ret = avcodec_send_packet(avctx, &pkt);
-        if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF)
-            break;
-        AVFrame *frame = av_frame_alloc();
-        ret = avcodec_receive_frame(avctx, frame);
-        if (ret < 0 && ret != AVERROR_EOF)
-            break;
-        frame->pts = av_frame_get_best_effort_timestamp(frame);
-        frame_queue.put_frame(frame);
-        if (ret < 0) {
-            packet_pending = 0;
-        } else {
-
-        }
-    } while (ret != 0 && !finished);
-
-    return 0;
-}
-
-
-void AudioDecoder::decode() {
-
-    AVFrame *frame = av_frame_alloc();
-    for (;;) {
-        if (pkt_queue.get_abort()) break;
-        int got;
-        if ((got = decoder_decode_frame()) < 0)
-            return;
-    }
-}
-
-
-int AudioDecoder::get_channels() {
-    return avctx->channels;
-}
-
-int AudioDecoder::get_sample_rate(){
-    return avctx->sample_rate;
-}
-
-
 
 
 void EasyPlayer::init(const std::string input_filename) {
@@ -226,8 +19,6 @@ void EasyPlayer::init(const std::string input_filename) {
     std::thread read_thread(&EasyPlayer::read, this);
     read_thread.detach();
 }
-
-
 
 void EasyPlayer::read() {
     int err, i, ret;
@@ -285,9 +76,7 @@ void EasyPlayer::read() {
         if (abort_request)
             break;
         if (paused)
-            av_read_pause(ic);
-        else
-            av_read_play(ic);
+        {av_read_pause(ic);}
         ret = av_read_frame(ic, pkt);
         if (ret < 0) {
             if ((ret == AVERROR_EOF || avio_feof(ic->pb)) && !eof) {
@@ -398,48 +187,6 @@ int EasyPlayer::stream_component_open(int stream_index) {
 }
 
 
-
-
-
-int VideoDecoder::decoder_decode_frame() {
-    int ret;
-
-    do {
-
-        if (pkt_queue.get_abort())
-            return -1;
-        if (!packet_pending || pkt_queue.get_serial() != pkt_serial) {
-            if (pkt_queue.get_packet(&pkt) < 0) return -1;
-            if (pkt.data == NULL) {
-                av_log(NULL, AV_LOG_FATAL, "reach eof.\n");
-                return -1;
-            }
-
-        }
-        ret = avcodec_send_packet(avctx, &pkt);
-        if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF) {
-            av_log(NULL, AV_LOG_FATAL, "video avcodec_send_packet error %d.\n", ret);
-            break;
-        }
-
-        AVFrame *frame = av_frame_alloc();
-        ret = avcodec_receive_frame(avctx, frame);
-        if (ret < 0 && ret != AVERROR_EOF) {
-            av_log(NULL, AV_LOG_FATAL, "video avcodec_receive_frame error %d.\n", ret);
-            break;
-        }
-        frame->pts = av_frame_get_best_effort_timestamp(frame);
-        frame_queue.put_frame(frame);
-        if (ret < 0) {
-            packet_pending = 0;
-        } else {
-
-        }
-    } while (ret != 0 && !finished);
-    return 0;
-}
-
-
 bool EasyPlayer::has_video() {
     if (ic) {
         return video_stream >= 0;
@@ -479,8 +226,6 @@ bool EasyPlayer::get_aud_buffer(int &nextSize, uint8_t *outputBuffer) {
     av_frame_free(&av_frame->frame);
     return ret >= 0;
 }
-
-
 
 void EasyPlayer::wait_state(PlayerState need_state) {
     std::unique_lock<std::mutex> lock(mutex);
