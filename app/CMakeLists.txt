@@ -15,6 +15,8 @@ add_library( native-lib SHARED
               ${CMAKE_SOURCE_DIR}/src/main/cpp/Decoder.cpp
               ${CMAKE_SOURCE_DIR}/src/main/cpp/FrameQueue.cpp
               ${CMAKE_SOURCE_DIR}/src/main/cpp/PacketQueue.cpp
+              ${CMAKE_SOURCE_DIR}/src/main/cpp/AudioDecoder.cpp
+              ${CMAKE_SOURCE_DIR}/src/main/cpp/VideoDecoder.cpp
                ${CMAKE_SOURCE_DIR}/src/main/cpp/easyPlayer.cpp)
 
 find_library( log-lib

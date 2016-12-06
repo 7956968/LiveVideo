@@ -98,8 +98,7 @@ void createBufferQueueAudioPlayer(int sampleRate, int channel) {
                                    SL_PCMSAMPLEFORMAT_FIXED_16, SL_PCMSAMPLEFORMAT_FIXED_16,
                                    SL_SPEAKER_FRONT_CENTER, SL_BYTEORDER_LITTLEENDIAN};
     /*
-     * Enable Fast Audio when possible:  once we set the same rate to be the native, fast audio path
-     * will be triggered
+     * Enable Fast Audio when possible:  once we set the same rate to be the native, fast audio path will be triggered
      */
     if(bqPlayerSampleRate) {
         format_pcm.samplesPerSec = bqPlayerSampleRate;       //sample rate in mili second

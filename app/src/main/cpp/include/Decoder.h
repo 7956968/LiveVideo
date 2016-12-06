@@ -10,7 +10,6 @@ extern "C"{
 
 #include <thread>
 #include <condition_variable>
-#include "Decoder.h"
 #include "PacketQueue.h"
 
 class Decoder {
@@ -35,21 +34,5 @@ protected:
     AVRational next_pts_tb;
 };
 
-
-class VideoDecoder : public Decoder {
-public:
-    virtual int decoder_decode_frame() override ;
-    virtual void decode() override ;
-    int get_width();
-    int get_height();
-};
-
-class AudioDecoder : public Decoder {
-public:
-    virtual int decoder_decode_frame() override ;
-    virtual void decode() override ;
-    int get_channels();
-    int get_sample_rate();
-};
 
 #endif //LIVEVIDEO_DECODER_H

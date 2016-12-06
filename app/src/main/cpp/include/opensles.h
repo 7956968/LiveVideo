@@ -11,16 +11,12 @@
 #include <pthread.h>
 #include <assert.h>
 #include "easyPlayer.h"
-void createAudioEngine();
+
+void createAudioEngine();//创建引擎
 void createBufferQueueAudioPlayer(int sampleRate, int channel);
 void audioStart();
 void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context);
 void releaseResampleBuf(void);
 void init(EasyPlayer *player);
-
-
-
-
-
 
 #endif //EASYPLAYER_OPENSLES_H

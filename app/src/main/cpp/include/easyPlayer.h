@@ -24,7 +24,8 @@ extern "C"{
 #include <memory>
 #include <unistd.h>
 #include "PlayerState.h"
-#include "Decoder.h"
+#include "AudioDecoder.h"
+#include "VideoDecoder.h"
 
 class EasyPlayer {
 public:
@@ -44,6 +45,7 @@ public:
     bool get_paused() {
         return paused;
     }
+
     AVFormatContext *ic;
     char *filename;
     int abort_request;

@@ -12,7 +12,6 @@ extern "C"{
 
 struct Frame {
     Frame(AVFrame *f) : frame(f){
-
     }
     AVFrame *frame;
     int serial;
